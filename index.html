@@ -65,15 +65,21 @@
     </script>
 </head>
 <body>
-    <p>Welcome to carbon offsetting! Input your flight numbers:</p>
-    <form id="flights">
-        <div class="form-group">
-            <label for="flightno">Flight</label>
-            <input type="text" >
-        </div>
-    </form>
-    <button onclick="addFlight()" class="btn btn-success" > Add flight </button>
-    <button onclick="queryFlights()" class="btn btn-warning" > Find Carbon Offset </button>
+    <div class="d-flex justify-content-center">
+        <p>Welcome to carbon offsetting! Input your flight numbers:</p>
+    </div>
+    <div class="d-flex justify-content-center">
+        <form id="flights">
+            <div class="form-group">
+                <label for="flightno">Flight</label>
+                <input type="text" >
+            </div>
+        </form>
+    </div>
+    <div class="d-flex justify-content-center">
+        <button onclick="addFlight()" class="btn btn-success" > Add flight </button>
+        <button onclick="queryFlights()" class="btn btn-warning" > Find Carbon Offset </button>
+    </div>
 </body>
 
 
