@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <title>FuelCarbonOffset</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script>
+    APIKey = "TaBjwuONhA65tTHtblHQo7wbvRLeXW8V70rkzV4I";
+    APIEndpoint = "https://mch3ty51uh.execute-api.eu-west-1.amazonaws.com/default/FlightCarbonOffset";
+
+    function queryFlight(flightNumber, elem) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST",APIEndpoint,true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("x-api-key",APIKey);
+        xhr.onreadystatechange = function (){
+            if (xhr.readyState === 4) {
+                if(xhr.status === 200){
+                    res = JSON.parse(xhr.responseText);
+                    for (let d in res){
+                      for (let f in res[d]){
+                        var flight = res[d][f];
+
+                        var t = document.createElement('template');
+                        t.innerHTML = `<div>
+                            <p> From ${flight['data']['origin']} to ${flight['data']['destination']}</p>
+                            <p> Distance: ${flight['data']['distance']} miles </p>
+                            <p> Gallons: ${flight['data']['gallons']} </p>
+                            <p> Seats: ${flight['seats']} </p>
+                            <p> Gallons / Seat: ${flight['gps']} </p>
+                            <p> CO2 KG: ${flight['co2']} </p>
+                         </div>`.trim();
+                        elem.parentElement.appendChild(t.content.firstChild);
+
+                      }
+                    }
+                    console.log(JSON.parse(xhr.responseText));
+                } else {
+
+                }
+            }
+        }
+        xhr.send(JSON.stringify({"flights": [flightNumber]}))
+    }
+
+    function addFlight(){
+        var t = document.createElement('template');
+        t.innerHTML = `<div class="form-group">
+                         <label for="flightno">Flight</label>
+                         <input type="text"  >
+                       </div>`.trim();   
+
+        var f = document.getElementById('flights');
+        f.appendChild(t.content.firstChild);
+    }
+
+    function queryFlights(){
+        var ins = document.getElementById('flights').getElementsByTagName('input');
+        
+        for (let i of ins){
+            if (i.value) {
+                console.log(i.parentElement)
+                queryFlight(i.value,i)
+            }
+        }
+    }
+    </script>
+</head>
+<body>
+    <p>Welcome to carbon offsetting! Input your flight numbers:</p>
+    <form id="flights">
+        <div class="form-group">
+            <label for="flightno">Flight</label>
+            <input type="text" >
+        </div>
+    </form>
+    <button onclick="addFlight()" class="btn btn-success" > Add flight </button>
+    <button onclick="queryFlights()" class="btn btn-warning" > Find Carbon Offset </button>
+</body>
+
+
+</html>
