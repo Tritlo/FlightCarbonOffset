@@ -5,6 +5,9 @@
 <script>
     APIKey = "TaBjwuONhA65tTHtblHQo7wbvRLeXW8V70rkzV4I";
     APIEndpoint = "https://mch3ty51uh.execute-api.eu-west-1.amazonaws.com/default/FlightCarbonOffset";
+    TOTALCO2 = 0;
+    TOTALGALLONS = 0;
+
 
     function queryFlight(flightNumber, elem) {
         var xhr = new XMLHttpRequest();
@@ -20,20 +23,35 @@
                         var flight = res[d][f];
 
                         var t = document.createElement('template');
-                        t.innerHTML = `<div>
+                        t.innerHTML = `<div class='res'>
                             <p> From ${flight['data']['origin']} to ${flight['data']['destination']}</p>
                             <p> Distance: ${flight['data']['distance']} miles </p>
                             <p> Gallons: ${flight['data']['gallons']} </p>
                             <p> Seats: ${flight['seats']} </p>
-                            <p> Gallons / Seat: ${flight['gps']} </p>
-                            <p> CO2 KG: ${flight['co2']} </p>
+                            <p> Gallons / Seat: ${Math.round(flight['gps'])} </p>
+                            <p> CO2kg: ${flight['co2']} </p>
                          </div>`.trim();
+                        // Race condition, but eh...
+                        TOTALCO2 += flight['co2'];
+                        TOTALGALLONS += flight['gps'];
+                        document.getElementById("res-co2").innerText = `${TOTALCO2}`;
+                        document.getElementById("res-gallons").innerText = `${Math.round(TOTALGALLONS)}`;
+                        var prevRes = elem.parentElement.getElementsByTagName('div');
+                        for (let d in prevRes){
+                            var e = prevRes[d];
+                            e.innerHTML = '';
+                        }
                         elem.parentElement.appendChild(t.content.firstChild);
 
                       }
                     }
                     console.log(JSON.parse(xhr.responseText));
                 } else {
+                        var t = document.createElement('template');
+                        t.innerHTML = `<div class='res'>
+                                 <p> Error occurred for flight ${flightNumber}, try again.</p>
+                                  </div>`.trim();
+                        elem.parentElement.appendChild(t.content.firstChild);
 
                 }
             }
@@ -45,7 +63,7 @@
         var t = document.createElement('template');
         t.innerHTML = `<div class="form-group">
                          <label for="flightno">Flight</label>
-                         <input type="text"  >
+                         <input type="text" >
                        </div>`.trim();   
 
         var f = document.getElementById('flights');
@@ -54,7 +72,7 @@
 
     function queryFlights(){
         var ins = document.getElementById('flights').getElementsByTagName('input');
-        
+        TOTAL = 0;
         for (let i of ins){
             if (i.value) {
                 console.log(i.parentElement)
@@ -77,8 +95,12 @@
         </form>
     </div>
     <div class="d-flex justify-content-center">
+        <p>Total is <span id="res-co2">0</span> CO2kg / <span id="res-gallons">0</span> gallons.</p>
+    </div>
+    <div class="d-flex justify-content-center">
         <button onclick="addFlight()" class="btn btn-success" > Add flight </button>
         <button onclick="queryFlights()" class="btn btn-warning" > Find Carbon Offset </button>
+        <button onclick="reset()" class="btn btn-danger" > Reset </button>
     </div>
 </body>
 
