@@ -75,7 +75,11 @@ def queryFlight(flightCode: str):
       fuel = plan['fuelBurn']['gallons']
       length = plan['ete']
       return {'type' : t,'friendlyType': tf,
-              'gallons':fuel,'flightDuration':length}
+              'gallons':fuel,'flightDuration':length,
+              'origin': flight['origin']['friendlyName'],
+              'destination': flight['destination']['friendlyName'],
+              'distance': plan['directDistance']
+      }
 
     return list(map(extract, flights))
   else:
@@ -253,11 +257,12 @@ def findCO2Kgs(flights):
   results = {}
   for f in flights:
     data = queryFlight(f)
-    print(data[0])
-    seats = seatQ.querySeats(data[0]['friendlyType'])
-    gps = data[0]['gallons'] / seats
-    co2 = round(poundsToKg(gallonsToCO2Pounds(gps)))
-    results[f] = {'data': data[0], 'seats': seats, 'co2': co2, 'gps':gps}
+    results[f] = []
+    for r in data:
+      seats = seatQ.querySeats(r['friendlyType'])
+      gps = r['gallons'] / seats
+      co2 = round(poundsToKg(gallonsToCO2Pounds(gps)))
+      results[f].append({'data': r, 'seats': seats, 'co2': co2, 'gps':gps})
   return results
 
 if __name__ == '__main__':
