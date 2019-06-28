@@ -142,11 +142,12 @@ class SGPlaneParser(HTMLParser):
 
 class SeatQueryer(object):
 
+  cached = None
   aircraft = None
   links = None
   baseUrl = 'https://seatguru.com'
 
-  def __init__(self):
+  def loadFromUrl(self):
     lhUrl = 'https://www.seatguru.com/charts/longhaul_economy.php'
     shUrl = 'https://www.seatguru.com/charts/shorthaul_economy.php'
 
@@ -158,6 +159,13 @@ class SeatQueryer(object):
     self.aircraft = sgpp.makeAndTy
     self.links = sgpp.links
 
+  def __init__(self):
+    try:
+      with open('aircraft.json','r') as f:
+        self.cached = json.loads(f.read())
+    except FileNotFoundError:
+      pass
+
   @staticmethod
   def transformer(st):
     crj = 'Canadair Regional Jet'
@@ -166,8 +174,17 @@ class SeatQueryer(object):
     return st
 
   def findSimilar(self, friendlyType:str):
+
     friendlyType = self.transformer(friendlyType)
     spl = friendlyType.split(' ')[:2]
+    if len(spl) == 2\
+       and spl[0] in self.cached\
+       and spl[1] in self.cached[spl[0]]:
+      return (True, self.cached[spl[0]][spl[1]])
+
+    if not self.aircraft:
+      self.loadFromUrl()
+
     url = None
     minDistStr = None
     if len(spl) == 2 and spl[0] in self.aircraft:
@@ -178,21 +195,26 @@ class SeatQueryer(object):
         tys = list(self.aircraft[m].keys())
         minDistStr = findMinDistStr(t,tys)
       url = self.aircraft[m][minDistStr]
-    if url is None:
-      tys = list(self.links.keys())
-      print(tys)
-      minDistStr = findMinDistStr(' '.join(spl),tys)
-      url = self.links[minDistStr]
-    return url
+      if m in self.cached and minDistStr in self.cached[m]:
+        return (True, self.cached[m][minDistStr])
+      else:
+        return (False, url)
+    tys = list(self.links.keys())
+    minDistStr = findMinDistStr(' '.join(spl),tys)
+    url = self.links[minDistStr]
+    return (False, url)
 
 
   def querySeats(self, friendlyType: str):
-
-    url = self.findSimilar(friendlyType)
-    raw = urlopen(f'{self.baseUrl}{url}').read().decode('utf8')
-    parser = SGSeatParser()
-    parser.feed(raw)
-    return parser.seatCount
+    (cached, res) = self.findSimilar(friendlyType)
+    if cached:
+      return res
+    else:
+      print(f"{friendlyType} not cached!")
+      raw = urlopen(f'{self.baseUrl}{res}').read().decode('utf8')
+      parser = SGSeatParser()
+      parser.feed(raw)
+      return parser.seatCount
 
 def findMinDistStr(s, strs):
     if not s:
