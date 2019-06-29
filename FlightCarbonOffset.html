@@ -7,13 +7,41 @@
     APIEndpoint = "https://mch3ty51uh.execute-api.eu-west-1.amazonaws.com/default/FlightCarbonOffset";
     TOTALCO2 = 0;
     TOTALGALLONS = 0;
+    const ptokg = 2.20462
+    const co2totrees = 1/100; // 1 tree can absorb 100 kg (source https://projects.ncsu.edu/project/treesofstrength/treefact.htm )
 
+    function removeReses(elem){
+        var prevRes = Array.from(elem.parentElement.getElementsByClassName('res'));
+        for (let d = 0; d < prevRes.length; d++){
+            var e = prevRes[d];
+            elem.parentElement.removeChild(e);
+        }
+        
+    }
 
     function queryFlight(flightNumber, elem) {
+        if (elem.lastFlight === flightNumber){
+            return
+        } else {
+            elem.lastFlight = flightNumber;
+        }
         var xhr = new XMLHttpRequest();
         xhr.open("POST",APIEndpoint,true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("x-api-key",APIKey);
+
+        var t = document.createElement('template');
+        t.innerHTML = `
+        <div class="res d-flex justify-content-center">
+             <div class="spinner-border p-4" role='status'>
+                <span class="sr-only">Loading...</span>
+            </div>
+            </div>
+            `.trim();
+
+        removeReses(elem);
+        elem.parentElement.appendChild(t.content.firstChild);
+
         xhr.onreadystatechange = function (){
             if (xhr.readyState === 4) {
                 if(xhr.status === 200){
@@ -24,47 +52,75 @@
 
                         var t = document.createElement('template');
                         t.innerHTML = `<div class='res'>
-                            <p> From ${flight['data']['origin']} to ${flight['data']['destination']}</p>
-                            <p> Distance: ${flight['data']['distance']} miles </p>
-                            <p> Gallons: ${flight['data']['gallons']} </p>
-                            <p> Seats: ${flight['seats']} </p>
-                            <p> Gallons / Seat: ${Math.round(flight['gps'])} </p>
-                            <p> CO2kg: ${flight['co2']} </p>
+                            <p> From ${flight['data']['origin']} to ${flight['data']['destination']} (${flight['data']['distance']} miles):</p>
+                            <p> ${flight['data']['gallons']} gallons, ${flight['seats']} seats (<span class='r-gps'>${Math.round(flight['gps'])}</span>  gallons/seat)</p>
+                            <p> <span class='r-co2'>${flight['co2']}</span> kg / <span >${Math.round(flight['co2']*ptokg)}</span> lbs of CO<sub>2</sub></p>
                          </div>`.trim();
-                        // Race condition, but eh...
-                        TOTALCO2 += flight['co2'];
-                        TOTALGALLONS += flight['gps'];
-                        document.getElementById("res-co2").innerText = `${TOTALCO2}`;
-                        document.getElementById("res-gallons").innerText = `${Math.round(TOTALGALLONS)}`;
-                        var prevRes = elem.parentElement.getElementsByTagName('div');
-                        for (let d in prevRes){
-                            var e = prevRes[d];
-                            e.innerHTML = '';
-                        }
+
+                        removeReses(elem);
+
                         elem.parentElement.appendChild(t.content.firstChild);
+                        updateTotals();
 
                       }
                     }
                     console.log(JSON.parse(xhr.responseText));
                 } else {
-                        var t = document.createElement('template');
-                        t.innerHTML = `<div class='res'>
-                                 <p> Error occurred for flight ${flightNumber}, try again.</p>
-                                  </div>`.trim();
-                        elem.parentElement.appendChild(t.content.firstChild);
-
+                    var prevRes = Array.from(elem.parentElement.getElementsByTagName('div'));
+                    for (let d = 0; d < prevRes.length; d++){
+                        var e = prevRes[d];
+                        e.innerHTML = '';
+                    }
+                    var t = document.createElement('template');
+                    t.innerHTML = `<div class='res border border-warning'>
+                                <p> Error occurred for flight ${flightNumber}, try again.</p>
+                                </div>`.trim();
+                    elem.parentElement.appendChild(t.content.firstChild);
+                    updateTotals();
                 }
             }
         }
         xhr.send(JSON.stringify({"flights": [flightNumber]}))
     }
+    function updateTotals(){
+        var resEls = document.getElementsByClassName('res');
+        TOTALCO2 = 0;
+        TOTALGALLONS = 0;
+        for (var i = 0; i < resEls.length; i++){
+            var co2Rs = resEls[i].getElementsByClassName('r-co2');
+            for (var ei = 0; ei < co2Rs.length; ei++){
+                TOTALCO2 += parseInt(co2Rs[ei].innerText)
+            }
+
+            var gpsRs = resEls[i].getElementsByClassName('r-gps');
+            for (var ei = 0; ei < gpsRs.length; ei++){
+                TOTALGALLONS += parseInt(gpsRs[ei].innerText)
+            }
+        }
+        document.getElementById("res-co2").innerText = `${TOTALCO2}`;
+        document.getElementById("res-co2lbs").innerText = `${Math.round(TOTALCO2*ptokg)}`;
+        document.getElementById("res-gallons").innerText = `${TOTALGALLONS}`;
+        var trees = Math.round(TOTALCO2) * co2totrees;
+        document.getElementById("res-trees").innerText = `${trees.toFixed(2)}`;
+        if (trees < 1 || trees > 1){
+            document.getElementById("res-tree-plural").innerText = 's';
+        } else {
+            document.getElementById("res-tree-plural").innerText = '';
+        }
+
+    }
 
     function addFlight(){
         var t = document.createElement('template');
-        t.innerHTML = `<div class="form-group">
-                         <label for="flightno">Flight</label>
-                         <input type="text" >
-                       </div>`.trim();   
+        t.innerHTML = `<div class="flight justify-content-center mb-2">
+                            <div class="input-group input-group-lg mb-2">
+                         <div class="input-group-prepend">
+                            <label class="input-group-text" for="flightno">Flight</label>
+                         </div>
+                         <input type="text" class="form-control form-control-lg" placeholder="UA9916" >
+                       </div>
+                       </div>
+                       `.trim();   
 
         var f = document.getElementById('flights');
         f.appendChild(t.content.firstChild);
@@ -72,35 +128,74 @@
 
     function queryFlights(){
         var ins = document.getElementById('flights').getElementsByTagName('input');
-        TOTAL = 0;
+        updateTotals();
         for (let i of ins){
             if (i.value) {
-                console.log(i.parentElement)
-                queryFlight(i.value,i)
+                queryFlight(i.value,i.parentElement)
             }
         }
+    }
+    function clearRes(e){
+        e.parentElement.removeChild(e);
+        updateTotals();
+    }
+
+    function reset(){
+        var rels = Array.from(document.getElementsByClassName('res'));
+        for(let i = 0; i < rels.length; i++){
+            clearRes(rels[i]);
+        }
+    }
+    window.onload = () =>{
+        updateTotals();
+        addFlight();
     }
     </script>
 </head>
 <body>
-    <div class="d-flex justify-content-center">
-        <p>Welcome to carbon offsetting! Input your flight numbers:</p>
-    </div>
-    <div class="d-flex justify-content-center">
-        <form id="flights">
-            <div class="form-group">
-                <label for="flightno">Flight</label>
-                <input type="text" >
+    <div class="d-flex flex-column p-4">
+        <div class="p-3">
+            <div class="d-flex justify-content-center">
+                <h1 class="text-center">Welcome to carbon offsetting!</h1>
             </div>
-        </form>
-    </div>
-    <div class="d-flex justify-content-center">
-        <p>Total is <span id="res-co2">0</span> CO2kg / <span id="res-gallons">0</span> gallons.</p>
-    </div>
-    <div class="d-flex justify-content-center">
-        <button onclick="addFlight()" class="btn btn-success" > Add flight </button>
-        <button onclick="queryFlights()" class="btn btn-warning" > Find Carbon Offset </button>
-        <button onclick="reset()" class="btn btn-danger" > Reset </button>
+            <div class="d-flex justify-content-center">
+                <h2 class="text-center">Input your flight numbers:</h2>
+            </div>
+        </div>
+        <div>
+            <div class="d-flex justify-content-center h4" >
+                <form id="flights">
+                    <!-- flights are inserted here automatically-->
+                </form>
+            </div>
+            <div class="row">
+                <button onclick="addFlight()" class="btn btn-primary btn-lg col-sm" > Add flight </button>
+                <button onclick="queryFlights()" class="btn btn-success btn-lg col-sm" > Find Carbon Offset </button>
+                <button onclick="reset()" class="btn btn-danger btn-lg col-sm" > Reset </button>
+            </div>
+            <div class="p-3">
+                <div class="d-flex justify-content-center">
+                    <h3><strong>Total is <span id="res-co2">0</span> kg / <span id="res-co2lbs">0</span> lbs of CO<sub>2</sub> (<span id="res-gallons">0</span>  gallons).</strong></h3>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <h3><strong>That's the equivalent of <span id="res-trees"></span> tree<span id="res-tree-plural"></span>!</strong></h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3">
+            <div class="d-flex justify-content-center text-center">
+                <h3>Where to buy carbon offsets:</h3>
+            </div>
+            <div class="d-flex justify-content-center text-center">
+                <h4><a href="https://www.terrapass.com/product/productindividuals-families">TerraPass</a> provides carbon offsets for individuals in US units.
+                     Just enter your total number of pounds from the calculator!
+                     </h4>
+            </div>
+            <div class="d-flex justify-content-center text-center">
+                <h4><a href="https://kolvidur.is/">Kolvidur</a> is and Icelandic Carbon Fund, and offers purchases of trees by credit card, or direct tranfers. </h4>
+            </div>
+        </div>
     </div>
 </body>
 
