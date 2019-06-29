@@ -1,6 +1,7 @@
 <html>
     <head>
-        <title>FuelCarbonOffset</title>
+        <title>FuCOff</title>
+        <meta charset="UTF-8">
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 <script>
     APIKey = "TaBjwuONhA65tTHtblHQo7wbvRLeXW8V70rkzV4I";
@@ -22,9 +23,7 @@
     function queryFlight(flightNumber, elem) {
         if (elem.lastFlight === flightNumber){
             return
-        } else {
-            elem.lastFlight = flightNumber;
-        }
+        } 
         var xhr = new XMLHttpRequest();
         xhr.open("POST",APIEndpoint,true);
         xhr.setRequestHeader("Content-Type", "application/json");
@@ -45,6 +44,8 @@
         xhr.onreadystatechange = function (){
             if (xhr.readyState === 4) {
                 if(xhr.status === 200){
+                    // Save the last successful flight
+                    elem.lastFlight = flightNumber;
                     res = JSON.parse(xhr.responseText);
                     for (let d in res){
                       for (let f in res[d]){
@@ -156,7 +157,7 @@
     <div class="d-flex flex-column p-4">
         <div class="p-3">
             <div class="d-flex justify-content-center">
-                <h1 class="text-center">Welcome to carbon offsetting!</h1>
+                <h1 class="text-center">Welcome to fuel carbon offsetting!</h1>
             </div>
             <div class="d-flex justify-content-center">
                 <h2 class="text-center">Input your flight numbers:</h2>
