@@ -61,6 +61,7 @@
                         var t = document.createElement('template');
                         t.innerHTML = `<div class='res'>
                             <p> From ${flight['data']['origin']} to ${flight['data']['destination']} (${flight['data']['distance']} miles):</p>
+                            <p> Aircraft: ${flight['data']['friendlyType']}</p>
                             <p> ${flight['data']['gallons']} gallons, ${flight['seats']} seats (<span class='r-gps'>${Math.round(flight['gps'])}</span>  gallons/seat)</p>
                             <p> <span class='r-co2'>${flight['co2']}</span> kg / <span >${Math.round(flight['co2']*ptokg)}</span> lbs of CO<sub>2</sub></p>
                          </div>`.trim();
@@ -74,13 +75,9 @@
                     }
                     console.log(JSON.parse(xhr.responseText));
                 } else {
-                    var prevRes = Array.from(elem.parentElement.getElementsByTagName('div'));
-                    for (let d = 0; d < prevRes.length; d++){
-                        var e = prevRes[d];
-                        e.innerHTML = '';
-                    }
+                    removeReses(elem);
                     var t = document.createElement('template');
-                    t.innerHTML = `<div class='res border border-warning'>
+                    t.innerHTML = `<div class='res'>
                                 <p> Error occurred for flight ${flightNumber}, try again.</p>
                                 </div>`.trim();
                     elem.parentElement.appendChild(t.content.firstChild);
