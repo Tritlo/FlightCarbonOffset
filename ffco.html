@@ -11,6 +11,7 @@
 
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 <script>
+    // APIKey to the lambda service, nothing to see here
     APIKey = "TaBjwuONhA65tTHtblHQo7wbvRLeXW8V70rkzV4I";
     APIEndpoint = "https://mch3ty51uh.execute-api.eu-west-1.amazonaws.com/default/FlightCarbonOffset";
     TOTALCO2 = 0;
@@ -76,6 +77,7 @@
                     console.log(JSON.parse(xhr.responseText));
                 } else {
                     removeReses(elem);
+                    elem.lastFlight = null;
                     var t = document.createElement('template');
                     t.innerHTML = `<div class='res'>
                                 <p> Error occurred for flight ${flightNumber}, try again.</p>
