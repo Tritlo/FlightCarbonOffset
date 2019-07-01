@@ -13,7 +13,9 @@ class NoSuchFlightError(BaseException):
 def findMinDistStr(s, strs):
     if not s:
       return sorted(strs, key=lambda s: len(s))[0]
-
+    for st in strs:
+      if s.startswith(st) or st.startswith(s):
+        return st
     minSoFar = strs[0]
     minDistSoFar = lev(s,strs[0])
     for os in strs[1:]:
