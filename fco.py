@@ -209,10 +209,11 @@ def findCO2Kgs(flights):
       (found, simAir) = findSimilar(r['friendlyType'])
       if found:
         seats = round((seats + simAir['seats'])/2)
-        gEst = int(r['distance'])*simAir['gpm']
+        #Gallons per mile, and accounting for takeoff and landing
+        gEst = int(r['distance'])*simAir['gpm']*1.05
         # Sometimes FlightAware uses both directions at once.
         if r['gallons'] >= 1.5*gEst:
-          r['gallons'] = round(max(r['gallons']/2),gEst)
+          r['gallons'] = round(max(r['gallons']/2,gEst))
       gps = r['gallons'] / seats
       co2 = round(poundsToKg(gallonsToCO2Pounds(gps)))
       results[f].append({'data': r, 'seats': seats, 'co2': co2, 'gps':gps})
