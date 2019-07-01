@@ -187,7 +187,6 @@ class SeatQueryer(object):
     url = self.links[minDistStr]
     return (False, url)
 
-
   def querySeats(self, friendlyType: str):
     (cached, res) = self.findSimilar(friendlyType)
     if cached:
@@ -209,11 +208,11 @@ def findCO2Kgs(flights):
       seats = seatQ.querySeats(r['friendlyType'])
       (found, simAir) = findSimilar(r['friendlyType'])
       if found:
-        seats = max(seats, simAir['seats'])
+        seats = round((seats + simAir['seats'])/2)
         gEst = int(r['distance'])*simAir['gpm']
         # Sometimes FlightAware uses both directions at once.
-        if r['distance'] >= 500  and r['gallons'] >= 1.5*gEst:
-          r['gallons'] = round(r['gallons'])/2
+        if r['gallons'] >= 1.5*gEst:
+          r['gallons'] = round(max(r['gallons']/2),gEst)
       gps = r['gallons'] / seats
       co2 = round(poundsToKg(gallonsToCO2Pounds(gps)))
       results[f].append({'data': r, 'seats': seats, 'co2': co2, 'gps':gps})
