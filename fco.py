@@ -193,7 +193,7 @@ class SeatQueryer(object):
     if cached:
       return res
     else:
-      print(f"{friendlyType} not cached!")
+      print(f"{friendlggyType} not cached!")
       raw = urlopen(f'{self.baseUrl}{res}').read().decode('utf8')
       parser = SGSeatParser()
       parser.feed(raw)
@@ -207,6 +207,13 @@ def findCO2Kgs(flights):
     results[f] = []
     for r in data:
       seats = seatQ.querySeats(r['friendlyType'])
+      (found, simAir) = findSimilar(r['friendlyType'])
+      if found:
+        seats = (seats + simAir['seats'])/2
+        gEst = int(r['distance'])*simAir['gpm']
+        # Sometimes FlightAware uses both directions at once.
+        if r['gallons'] >= 1.5*gEst:
+          r['gallons'] = round(r['gallons'])/2
       gps = r['gallons'] / seats
       co2 = round(poundsToKg(gallonsToCO2Pounds(gps)))
       results[f].append({'data': r, 'seats': seats, 'co2': co2, 'gps':gps})

@@ -1,3 +1,4 @@
+import json
 
 def gallonsToCO2Pounds(gallons):
   return gallons*21.5
@@ -40,3 +41,33 @@ def lev(s, t):
     for j in range(len(v0)):
       v0[j] = v1[j]
   return v1[len(t)]
+
+# Fix inconsistencies in naming from FlightAware
+def transformer(st):
+  crj = 'Canadair Regional Jet'
+  if st.startswith(crj):
+    return 'Bombardier' + st[len(crj):]
+  return st
+
+with open('aircraft-2.0.json','r') as f:
+  aircraftInfo = json.loads(f.read())
+
+def findSimilar(friendlyType:str):
+
+  friendlyType = transformer(friendlyType)
+  spl = friendlyType.split(' ')[:2]
+  if len(spl) == 2\
+     and spl[0] in aircraftInfo\
+     and spl[1] in aircraftInfo[spl[0]]:
+    return (True, aircraftInfo[spl[0]][spl[1]])
+
+  if len(spl) == 2 and spl[0] in aircraftInfo:
+    (m,t) = spl
+    if t in aircraftInfo[m]:
+      minDistStr = t
+    else:
+      tys = list(aircraftInfo[m].keys())
+      minDistStr = findMinDistStr(t,tys)
+    return (True, aircraftInfo[m][minDistStr])
+
+  return (False, None)
